@@ -4,6 +4,10 @@ const config = require('./config/config.json');
 const fs = require('fs');
 const XLSX = require("xlsx");
 
+//database conn
+const mongojs = require('mongojs');
+const db = mongojs('autoMailCheck', ['checkSendOk']);
+
  
 // let workbook = XLSX.readFile("./upload/note.xlsx")
 // let worksheet = workbook.Sheets["Sheet1"]
@@ -46,11 +50,20 @@ var sendKey = Object.getOwnPropertyNames( sendData[0] )
 // console.log(sendKey);       // [ 0:'__rowNum__', 1:'mail', 2:'fileName' ]
 
 
+
+
 let endData = {};
 let inData = [];
 let inArr = {}
 const sendLen = sendData.length;
 let countSend = 0;
+
+for( var line in sendData ){
+    //DB 초기화
+    db.checkSendOk.remove({});
+    //DB 데이터 입력
+    db.checkSendOk.save({mail:sendData[line][sendKey[1]], fileName:sendData[line][sendKey[2]]});
+}
 
 var sendMails = new Promise(function(resolve, reject){
     for( var line in sendData ) {
@@ -63,7 +76,6 @@ var sendMails = new Promise(function(resolve, reject){
                     //fileName: 'cth_main.jpg',
                     //streamSource: fs.createReadStream('./upload/cth_main.jpg'),
                     path: './upload/'+ sendData[line][sendKey[2]] + '.pdf'
-    
                 }
             ];
     
@@ -93,16 +105,18 @@ var sendMails = new Promise(function(resolve, reject){
         transporter.sendMail(mailOptions, function (err, res) {
         if (err) {
             console.log('failed E-mail : '+mailOptions.to+ ' / ERR => ' + err);
-            console.log(res);
-            inArr['check'] = 'failed';
-            //inArr['email'] = res.accepted ;
+            console.log(err.path.split('\\').pop().split('.')[0]);
+            var errFileName = err.path.split('\\').pop().split('.')[0];
             countSend++;
+            db.checkSendOk.update({fileName:errFileName}, {$set:{check: 'failed'}});
+
         } else {
             console.log('succeed E-mail : '+ res.accepted + ' / ' + res.response );
-            //console.log(res );
+            console.log(String(res.accepted));
             inArr['check'] = 'succeed';
             inArr['email'] = res.accepted ;
             countSend++;
+            db.checkSendOk.update({mail:String(res.accepted)}, {$set:{check: 'succeed'}});
         }
         inData[line] = inArr;
         transporter.close();
@@ -113,17 +127,17 @@ var sendMails = new Promise(function(resolve, reject){
 });
 
 sendMails.then(res => {
-    endData['Sheet1'] =  inData;
-    let finalHeaders = ['email', 'check'];
+    // endData['Sheet1'] =  inData;
+    // let finalHeaders = ['email', 'check'];
     
-    //엑셀 저장
-    let ws = XLSX.utils.json_to_sheet(endData['Sheet1'], {header: finalHeaders});
-    let wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "SheetJS")
-    let exportFileName = `./upload/out.xlsx`;
-    XLSX.writeFile(wb, exportFileName)
+    // //엑셀 저장
+    // let ws = XLSX.utils.json_to_sheet(endData['Sheet1'], {header: finalHeaders});
+    // let wb = XLSX.utils.book_new();
+    // XLSX.utils.book_append_sheet(wb, ws, "SheetJS")
+    // let exportFileName = `./upload/out.xlsx`;
+    // XLSX.writeFile(wb, exportFileName)
     
-    console.log('END');
+    // console.log('END');
 })
 
 

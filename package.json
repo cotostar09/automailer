@@ -11,6 +11,7 @@
     "debug": "^2.2.0",
     "ejs": "^2.3.4",
     "express": "^4.13.4",
+    "mongojs": "^2.6.0",
     "morgan": "^1.6.1",
     "nodemailer": "^2.5.0",
     "nodemailer-smtp-pool": "^2.8.3",
