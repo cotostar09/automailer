@@ -67,15 +67,22 @@ for( var line in sendData ){
 
 var sendMails = new Promise(function(resolve, reject){
     for( var line in sendData ) {
-        var sender = '보내는 사람 < cotostar09@gmail.com >';    //보내는 메일
+        var sender = '서던포스트 < ysj@southernpost.co.kr >';    //보내는 메일
+        
+       //var sender = '보내는 사람 < cotostar09@gmail.com >';    //보내는 메일 
         var receiver = sendData[line][sendKey[1]];             //받는 메일
-        var mailTitle = '제목 1';
-        var html = '<h1>내용</h1> 본문1';
+        var mailTitle = '영등포구청_간부진 부패위험성 진단 평가 결과 송부';
+        var html = '<div>안녕하십니까</div><div><br></div><div>영등포구청 감사실 의뢰로 지난 6월 &lt;간부진 부패위험성 진단 평가&gt;를 실시한 평가결과를 붙임과 같이 첨부하여 보내드립니다.</div><div><br></div><div>본 평가는 국민권익위원회의 고위공직자 부패위험성 진단 표준모형을 준수하였으며, 영등포구청 간부진 국/소장, 부서장/동장 총 62명을 대상으로 조사기관 (주)서던포스트에서 진행하였습니다.</div><div><br></div><div>파일첨부:</div><div>간부진 청렴도 인사말 및 개인통보용 결과 안내</div>';
         var attachments = [
                 {
                     //fileName: 'cth_main.jpg',
                     //streamSource: fs.createReadStream('./upload/cth_main.jpg'),
                     path: './upload/'+ sendData[line][sendKey[2]] + '.pdf'
+                },
+                {
+                    //fileName: 'cth_main.jpg',
+                    //streamSource: fs.createReadStream('./upload/cth_main.jpg'),
+                    path: './upload/(첨부) 간부진 청렴도 인사말.hwp'
                 }
             ];
     
@@ -104,18 +111,19 @@ var sendMails = new Promise(function(resolve, reject){
     
         transporter.sendMail(mailOptions, function (err, res) {
         if (err) {
-            console.log('failed E-mail : '+mailOptions.to+ ' / ERR => ' + err);
+            countSend++;
+            console.log(countSend + '. failed E-mail : '+mailOptions.to+ ' / ERR => ' + err);
             console.log(err.path.split('\\').pop().split('.')[0]);
             var errFileName = err.path.split('\\').pop().split('.')[0];
-            countSend++;
+            
             db.checkSendOk.update({fileName:errFileName}, {$set:{check: 'failed'}});
 
         } else {
-            console.log('succeed E-mail : '+ res.accepted + ' / ' + res.response );
+            countSend++;
+            console.log(countSend + '. succeed E-mail : '+ res.accepted + ' / ' + res.response );
             console.log(String(res.accepted));
             inArr['check'] = 'succeed';
             inArr['email'] = res.accepted ;
-            countSend++;
             db.checkSendOk.update({mail:String(res.accepted)}, {$set:{check: 'succeed'}});
         }
         inData[line] = inArr;
@@ -127,17 +135,7 @@ var sendMails = new Promise(function(resolve, reject){
 });
 
 sendMails.then(res => {
-    // endData['Sheet1'] =  inData;
-    // let finalHeaders = ['email', 'check'];
-    
-    // //엑셀 저장
-    // let ws = XLSX.utils.json_to_sheet(endData['Sheet1'], {header: finalHeaders});
-    // let wb = XLSX.utils.book_new();
-    // XLSX.utils.book_append_sheet(wb, ws, "SheetJS")
-    // let exportFileName = `./upload/out.xlsx`;
-    // XLSX.writeFile(wb, exportFileName)
-    
-    // console.log('END');
+
 })
 
 
